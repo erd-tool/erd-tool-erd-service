@@ -1,13 +1,15 @@
 FROM gradle:8.10.2-jdk21 AS build
 WORKDIR /workspace
-COPY settings.gradle build.gradle ./
-COPY common ./common
-COPY erd-service ./erd-service
-RUN gradle :erd-service:bootJar -x test --no-daemon
+ARG GITHUB_ACTOR
+ARG GITHUB_TOKEN
+ENV GITHUB_ACTOR=$GITHUB_ACTOR
+ENV GITHUB_TOKEN=$GITHUB_TOKEN
+COPY . .
+RUN gradle bootJar -x test --no-daemon
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN apk add --no-cache wget
-COPY --from=build /workspace/erd-service/build/libs/*.jar app.jar
+COPY --from=build /workspace/build/libs/*.jar app.jar
 EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "app.jar"]
